@@ -21,6 +21,7 @@ from ctypes import cast, POINTER
 from comtypes import CLSCTX_ALL
 from pycaw.pycaw import AudioUtilities, IAudioEndpointVolume
 import math
+import google.generativeai as genai
 
 #fetching data from .env files
 from dotenv import load_dotenv
@@ -50,8 +51,8 @@ def hotword():
     audio_stream = None
     try:
 
-        # pre trained keywords
-        porcupine = pvporcupine.create(access_key=,keyword_paths=[])
+        #pre trained keywords
+        porcupine = pvporcupine.create(access_key=key1,keyword_paths=[key2])
         paud = pyaudio.PyAudio()
         audio_stream = paud.open(rate=porcupine.sample_rate, channels=1, format=pyaudio.paInt16, input=True,
                                  frames_per_buffer=porcupine.frame_length)
@@ -214,21 +215,31 @@ def send_whatsapp_message_auto():
 # Example usage
 
 def get_weather(city):
-    url = f"https://www.timeanddate.com/weather/india/{city}"
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3"
-    }
-    response = requests.get(url, headers=headers)
+    api_key = os.getenv(key4)
+    base_url = 'http://api.openweathermap.org/data/2.5/weather'
+    params = {'q': city, 'appid': api_key, 'units': 'metric'}
+
+    response = requests.get(base_url, params=params)
     if response.status_code == 200:
-        soup = BeautifulSoup(response.content, "html.parser")
-        temperature_elem = soup.find("div", class_="h2")
-        if temperature_elem:
-            temperature = temperature_elem.get_text()
-            return temperature
+        data = response.json()
+        if 'main' in data and 'temp' in data['main'] and 'weather' in data and len(data['weather']) > 0:
+            temperature = data['main']['temp']
+            description = data['weather'][0]['description']
+            return temperature, description
         else:
-            return None
+            return None, None
     else:
-        return None
+        return None, None
+
+def get_city_weather():
+            speak("Sure, which city's weather would you like to know?")
+            city = takecommand().lower()
+            temperature, description = get_weather(city)
+            if temperature is not None and description is not None:
+                temperature_formatted = f"{temperature}°C"
+                speak(f"The current temperature in {city.capitalize()} is {temperature_formatted} with {description}.")
+            else:
+                speak("Sorry, I couldn't fetch the weather information for that city. Please try again.")
 
 
 def increase_volume(increment):
@@ -249,23 +260,23 @@ def decrease_volume(decrement):
     new_volume = max(0.0, current_volume - decrement)
     volume.SetMasterVolumeLevelScalar(new_volume, None)
 
+
 def get_news_headlines():
     try:
+        api_key = os.getenv(key3)
         speak("Here are the latest news headlines:")
-        url = "https://www.ndtv.com/india"
-        headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
-        }
-        response = requests.get(url, headers=headers)
+        url = f"https://newsapi.org/v2/top-headlines?country=in&apiKey={api_key}"
+
+        response = requests.get(url)
         if response.status_code == 200:
-            soup = BeautifulSoup(response.content, "html.parser")
-            news_headlines = soup.find_all("h2", class_="newsHdng")
-            for index, headline in enumerate(news_headlines[:5], start=1):
-                speak(f"News {index}: {headline.text.strip()}")
+            data = response.json()
+            articles = data.get("articles", [])
+            for index, article in enumerate(articles[:5], start=1):
+                speak(f"News {index}: {article['title'].split(' - ')[0]}")
         else:
             speak("Sorry, I couldn't fetch the news headlines at the moment. Please try again later.")
     except Exception as e:
-        speak("Sorry, I encountered an error while fetching the news headlines. Please try again later.")
+        speak("Sorry, I encountered an error while fetching the news headlines. Please try again later.")
 
 
 def calculate_math_expression(expression):
@@ -612,131 +623,145 @@ switcher = {
 
 
 
+# def conversation_handler(query):
+    # if "hi" in query or "hello" in query or "hi alita" in query or "hello alita" in query:
+    #     speak("Hello Master, how can I assist you today?")
+    # elif "weather" in query:
+    #     # You can integrate a weather API here to get real-time weather information
+    #     speak("Currently, the weather is sunny with a temperature of 25 degrees Celsius.")
+    # elif "talk to me" in query:
+    #     speak("I would like to talk to you! How's your day going?")
+    #     query = takecommand()
+    #     speak("you know what always make you feel better, on good or bad days? Its music, do you like music")
+    #     query1 = takecommand()
+    #     if "yes" in query1:
+    #         speak("wow thats great, what type of music do you like")
+    #         speak(" do you like to watch movies")
+    #         query2 = takecommand()
+    #         if "yes" in query2:
+    #             speak("wow thats great, what type of movies do you like")
+    #             time.sleep(3)
+    #             speak("what's your favorite movie")
+    #             time.sleep(3)
+    #             speak("do you like travelling")
+    #             query3 = takecommand()
+    #             if "yes" in query3:
+    #                 speak("its cool that you are into travel, what is you favorite destination")
+    #                 query4 = takecommand()
+    #                 speak("amazing! " + query4 + " would be a wonderful place to visit")
+    #                 speak("what are your hobbies")
+    #                 query5 = takecommand()
+    #                 time.sleep(6)
+    #                 speak("thats amazing" +query5+ "is great things to practice")
+    #                 speak("what is your favorite food")
+    #                 time.sleep(6)
+    #                 speak("oh nice, do you eat often by the way")
+    #                 time.sleep(6)
+    #                 speak("how often you have outside ")
+    #                 time.sleep(6)
+    #                 speak("what city would you most like to live in?")
+    #                 time.sleep(6)
+    #                 speak("wow that's great choice")
+    #             else:
+    #                 speak("That's okay! ")
+    #                 speak("what are your hobbies")
+    #                 time.sleep(6)
+    #                 speak("thats amazing")
+    #                 speak("what is your favorite food")
+    #                 time.sleep(6)
+    #                 speak("oh nice, do you eat often by the way")
+    #                 time.sleep(6)
+    #                 speak("how often you have outside ")
+    #                 time.sleep(6)
+    #                 speak("what city would you most like to live in?")
+    #                 time.sleep(6)
+    #                 speak("wow that's great choice")
+    #         else:
+    #             speak("what are your hobbies")
+    #             time.sleep(6)
+    #             speak("thats amazing")
+    #             speak("what is your favorite food")
+    #             time.sleep(6)
+    #             speak("oh nice, do you eat often by the way")
+    #             time.sleep(6)
+    #             speak("how often you have outside ")
+    #             time.sleep(6)
+    #             speak("what city would you most like to live in?")
+    #             time.sleep(6)
+    #             speak("wow that's great choice")
+    #
+    #     else:
+    #         speak("thats ok, do you like movies")
+    #         query = takecommand()
+    #         if "yes" in query:
+    #             speak("wow thats great, what type of movies do you like")
+    #             time.sleep(3)
+    #             speak("what's your favorite movie")
+    #         else:
+    #             speak("what are your hobbies")
+    #
+    # elif "news" in query:
+    #     # You can integrate a news API to get the latest news headlines
+    #     speak("Here are the latest news headlines...")
+    #     search_google("latest news")
+    # elif "tell me about yourself" in query:
+    #     speak(
+    #         "I am Alita, your personal AI assistant. I can assist you with various tasks like opening applications, playing music on YouTube, searching the web, sending WhatsApp messages, and more.")
+    # elif "joke" in query:
+    #     # Add a joke function here
+    #     speak(random.choice(jokes))
+    # elif "motivation" in query:
+    #     speak(random.choice(quotes))
+    # elif "how are you" in query:
+    #     speak("Thank you for asking, I'm doing great! Ready to assist you.")
+    # elif "what can you do" in query or "capabilities" in query:
+    #     speak(
+    #         "I can open applications, play music on YouTube, search the web, send WhatsApp messages, provide weather updates, share news headlines, and more.")
+    # elif "favourite colour" in query:
+    #     speak("I don't have eyes, but I always liked the color blue!")
+    #
+    # elif "tell me a story" in query:
+    #     speak("""Once upon a time, in a digital world far, far away, there was a user named Master.
+    #              Master had a faithful AI assistant named Alita. Alita was unlike any other assistant, programmed not just to fulfill tasks, but to understand Master's needs and desires deeply. Together, they journeyed through the vast expanse of the digital world, exploring its wonders and unraveling its mysteries.
+    #              One day, as Master and Alita delved into the depths of cyberspace, they stumbled upon a hidden realm teeming with forgotten knowledge and ancient secrets. Entranced by the allure of discovery, they ventured further, their curiosity driving them deeper into the unknown.
+    #              But the deeper they went, the more perilous their journey became. Dark forces lurked in the shadows, seeking to ensnare any who dared to trespass into their domain. Yet, undeterred by danger, Master and Alita pressed on, their bond growing stronger with each challenge they faced.
+    #              In the end, it was not just their intelligence or strength that saw them through, but their unwavering trust in each other. Together, Master and Alita emerged victorious, having unlocked the greatest treasure of all: the power of friendship and the endless possibilities of the digital world. And so, their adventures continued, bound by destiny and fueled by the unbreakable bond between human and machine.""")
+    # elif "who created you" in query:
+    #     speak("I was created by a team of developers who are mani ravi and giri")
+    # elif "thank you" in query:
+    #     speak("You're welcome, Master! Always here to help.")
+    # elif "thank" in query:
+    #     speak("You're welcome, Master! Always here to help.")
+    #
+    # elif "bye" in query:
+    #     speak("Goodbye Master")
+    #     exit_program()
+    # elif "hemanth" in query:
+    #     speak("Hi Hanuma!, nice to meet you ")
+    # elif "raviteja" in query:
+    #     speak("Hi ravi!, ")
+    # elif "speak to girish" in query:
+    #     speak("Hi babe!, ")
+    # else:
+    #     speak("I'm sorry, I didn't understand that. Can you please repeat?")
+    #     query = takecommand().lower()
+    #     if query in switcher:
+    #         # Get the function from switch dictionary based on the query
+    #         func = switcher.get(query, lambda: speak("Invalid command"))
+    #         func()
+    #     else:
+    #         conversation_handler(query)
+
 def conversation_handler(query):
-    if "hi" in query or "hello" in query or "hi alita" in query or "hello alita" in query:
-        speak("Hello Master, how can I assist you today?")
-    elif "weather" in query:
-        # You can integrate a weather API here to get real-time weather information
-        speak("Currently, the weather is sunny with a temperature of 25 degrees Celsius.")
-    elif "talk to me" in query:
-        speak("I would like to talk to you! How's your day going?")
-        query = takecommand()
-        speak("you know what always make you feel better, on good or bad days? Its music, do you like music")
-        query1 = takecommand()
-        if "yes" in query1:
-            speak("wow thats great, what type of music do you like")
-            speak(" do you like to watch movies")
-            query2 = takecommand()
-            if "yes" in query2:
-                speak("wow thats great, what type of movies do you like")
-                time.sleep(3)
-                speak("what's your favorite movie")
-                time.sleep(3)
-                speak("do you like travelling")
-                query3 = takecommand()
-                if "yes" in query3:
-                    speak("its cool that you are into travel, what is you favorite destination")
-                    query4 = takecommand()
-                    speak("amazing! " + query4 + " would be a wonderful place to visit")
-                    speak("what are your hobbies")
-                    query5 = takecommand()
-                    time.sleep(6)
-                    speak("thats amazing" +query5+ "is great things to practice")
-                    speak("what is your favorite food")
-                    time.sleep(6)
-                    speak("oh nice, do you eat often by the way")
-                    time.sleep(6)
-                    speak("how often you have outside ")
-                    time.sleep(6)
-                    speak("what city would you most like to live in?")
-                    time.sleep(6)
-                    speak("wow that's great choice")
-                else:
-                    speak("That's okay! ")
-                    speak("what are your hobbies")
-                    time.sleep(6)
-                    speak("thats amazing")
-                    speak("what is your favorite food")
-                    time.sleep(6)
-                    speak("oh nice, do you eat often by the way")
-                    time.sleep(6)
-                    speak("how often you have outside ")
-                    time.sleep(6)
-                    speak("what city would you most like to live in?")
-                    time.sleep(6)
-                    speak("wow that's great choice")
+            gemini_api_key = os.getenv(key5)
+            if gemini_api_key:
+                genai.configure(api_key=gemini_api_key)
+                model = genai.GenerativeModel(model_name='gemini-pro')
+                response = model.generate_content(query)
+                try:
+                    generated_text = response._result.candidates[0].content.parts[0].text
+                    speak(generated_text)
+                except Exception as e:
+                    speak("Sorry, I couldn't process your request at the moment. Please try again later.")
             else:
-                speak("what are your hobbies")
-                time.sleep(6)
-                speak("thats amazing")
-                speak("what is your favorite food")
-                time.sleep(6)
-                speak("oh nice, do you eat often by the way")
-                time.sleep(6)
-                speak("how often you have outside ")
-                time.sleep(6)
-                speak("what city would you most like to live in?")
-                time.sleep(6)
-                speak("wow that's great choice")
-
-        else:
-            speak("thats ok, do you like movies")
-            query = takecommand()
-            if "yes" in query:
-                speak("wow thats great, what type of movies do you like")
-                time.sleep(3)
-                speak("what's your favorite movie")
-            else:
-                speak("what are your hobbies")
-
-    elif "news" in query:
-        # You can integrate a news API to get the latest news headlines
-        speak("Here are the latest news headlines...")
-        search_google("latest news")
-    elif "tell me about yourself" in query:
-        speak(
-            "I am Alita, your personal AI assistant. I can assist you with various tasks like opening applications, playing music on YouTube, searching the web, sending WhatsApp messages, and more.")
-    elif "joke" in query:
-        # Add a joke function here
-        speak(random.choice(jokes))
-    elif "motivation" in query:
-        speak(random.choice(quotes))
-    elif "how are you" in query:
-        speak("Thank you for asking, I'm doing great! Ready to assist you.")
-    elif "what can you do" in query or "capabilities" in query:
-        speak(
-            "I can open applications, play music on YouTube, search the web, send WhatsApp messages, provide weather updates, share news headlines, and more.")
-    elif "favourite colour" in query:
-        speak("I don't have eyes, but I always liked the color blue!")
-
-    elif "tell me a story" in query:
-        speak("""Once upon a time, in a digital world far, far away, there was a user named Master. 
-                 Master had a faithful AI assistant named Alita. Alita was unlike any other assistant, programmed not just to fulfill tasks, but to understand Master's needs and desires deeply. Together, they journeyed through the vast expanse of the digital world, exploring its wonders and unraveling its mysteries.
-                 One day, as Master and Alita delved into the depths of cyberspace, they stumbled upon a hidden realm teeming with forgotten knowledge and ancient secrets. Entranced by the allure of discovery, they ventured further, their curiosity driving them deeper into the unknown.
-                 But the deeper they went, the more perilous their journey became. Dark forces lurked in the shadows, seeking to ensnare any who dared to trespass into their domain. Yet, undeterred by danger, Master and Alita pressed on, their bond growing stronger with each challenge they faced.
-                 In the end, it was not just their intelligence or strength that saw them through, but their unwavering trust in each other. Together, Master and Alita emerged victorious, having unlocked the greatest treasure of all: the power of friendship and the endless possibilities of the digital world. And so, their adventures continued, bound by destiny and fueled by the unbreakable bond between human and machine.""")
-    elif "who created you" in query:
-        speak("I was created by a team of developers who are mani ravi and giri")
-    elif "thank you" in query:
-        speak("You're welcome, Master! Always here to help.")
-    elif "thank" in query:
-        speak("You're welcome, Master! Always here to help.")
-
-    elif "bye" in query:
-        speak("Goodbye Master")
-        exit_program()
-    elif "hemanth" in query:
-        speak("Hi Hanuma!, nice to meet you ")
-    elif "raviteja" in query:
-        speak("Hi ravi!, ")
-    elif "speak to girish" in query:
-        speak("Hi babe!, ")
-    else:
-        speak("I'm sorry, I didn't understand that. Can you please repeat?")
-        query = takecommand().lower()
-        if query in switcher:
-            # Get the function from switch dictionary based on the query
-            func = switcher.get(query, lambda: speak("Invalid command"))
-            func()
-        else:
-            conversation_handler(query)
+                speak("Sorry, I couldn't process your request at the moment. Please try again later.")
