@@ -1,3 +1,4 @@
+import keyboard
 from playsound import playsound
 import eel
 import os
@@ -43,6 +44,8 @@ def play_youtube(query):
     pywhatkit.playonyt(query)
     #time.sleep(2)
     #pyautogui.hotkey('f')
+    time.sleep(5)
+    keyboard.press_and_release('f')
 
 def hotword():
     
