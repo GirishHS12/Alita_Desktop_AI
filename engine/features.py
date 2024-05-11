@@ -215,7 +215,7 @@ def send_whatsapp_message_auto():
 # Example usage
 
 def get_weather(city):
-    api_key = os.getenv(key4)
+    api_key = key4
     base_url = 'http://api.openweathermap.org/data/2.5/weather'
     params = {'q': city, 'appid': api_key, 'units': 'metric'}
 
@@ -263,7 +263,7 @@ def decrease_volume(decrement):
 
 def get_news_headlines():
     try:
-        api_key = os.getenv(key3)
+        api_key = key3
         speak("Here are the latest news headlines:")
         url = f"https://newsapi.org/v2/top-headlines?country=in&apiKey={api_key}"
 
@@ -522,7 +522,8 @@ switcher = {
             "play riddle game":play_riddle_game,
             "search chat gpt":chatgpt_search,
             "take screenshot":take_screenshot,
-            "check weather": open_weather,
+            "check news":get_news_headlines,
+            "check weather": get_city_weather,
             "remember this": remember_command,
             "what do you remember": retrieve_remembered_item,
             "maximize":maximize_application,
@@ -537,7 +538,6 @@ switcher = {
             "increase volume":volume_increase,
             "decrease volume":volume_decrease,
             "open spotify":open_spotify,
-            "check news":get_news_headlines,
             "scroll up":scroll_up,
             "scroll down":scroll_down,
             "open word":open_word,
@@ -576,7 +576,8 @@ switcher = {
             "alita play riddle game": play_riddle_game,
             "alita search chat gpt": chatgpt_search,
             "alita take screenshot": take_screenshot,
-            "alita check weather": open_weather,
+            "alita check news":get_news_headlines,
+            "alita check weather": get_city_weather,
             "alita remember this": remember_command,
             "alita what do you remember": retrieve_remembered_item,
             "alita maximize": maximize_application,
@@ -591,7 +592,6 @@ switcher = {
             "alita increase volume": volume_increase,
             "alita decrease volume": volume_decrease,
             "alita open spotify": open_spotify,
-            "alita check news": get_news_headlines,
             "alita scroll up": scroll_up,
             "alita scroll down": scroll_down,
             "alita open word": open_word,
@@ -753,13 +753,14 @@ switcher = {
     #         conversation_handler(query)
 
 def conversation_handler(query):
-            gemini_api_key = os.getenv(key5)
+            gemini_api_key = key5
             if gemini_api_key:
                 genai.configure(api_key=gemini_api_key)
                 model = genai.GenerativeModel(model_name='gemini-pro')
                 response = model.generate_content(query)
                 try:
                     generated_text = response._result.candidates[0].content.parts[0].text
+                    generated_text = generated_text.replace('*','')
                     speak(generated_text)
                 except Exception as e:
                     speak("Sorry, I couldn't process your request at the moment. Please try again later.")
